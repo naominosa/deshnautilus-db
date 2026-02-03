@@ -1,0 +1,96 @@
+/* Excelsheet.css */
+.container {
+  padding: 30px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f4f7f9;
+  min-height: 100vh;
+}
+
+.title {
+  color: #002b5b;
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 30px;
+  border-left: 5px solid #00cfb4;
+  padding-left: 15px;
+}
+
+/* Glass-morphism Form Card */
+.form-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+  margin-bottom: 40px;
+  border: 1px solid rgba(0, 207, 180, 0.2);
+}
+
+.form-title {
+  margin-top: 0;
+  color: #002b5b;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.input-group input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #00cfb4;
+  box-shadow: 0 0 0 3px rgba(0, 207, 180, 0.1);
+}
+
+.submit-btn {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #002b5b 0%, #004a8c 100%);
+  color: white;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 10px;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 43, 91, 0.3);
+}
+
+/* Action Button Styles */
+.delete-btn {
+  color: #d32f2f !important;
+}
+
+.edit-btn {
+  color: #002b5b !important;
+}
