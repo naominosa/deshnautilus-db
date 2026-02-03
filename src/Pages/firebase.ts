@@ -1,8 +1,8 @@
 // src/pages/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider } from "firebase/auth"; // Added these
 
-// Your Firebase config — replace with your real Firebase project values
 const firebaseConfig = {
   apiKey: "AIzaSyBx0IYWkV0_m4TU-FFHzO_3OLK1AoMMcIY",
   authDomain: "desh-nautilus-87bed.firebaseapp.com",
@@ -16,5 +16,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
+// Initialize and Export services
 export const db = getFirestore(app);
+export const auth = getAuth(app); // Export Auth
+export const googleProvider = new GoogleAuthProvider(); // Export Google Provider
