@@ -103,6 +103,28 @@
   border-bottom: 1px solid #eee;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logout-btn {
+  background-color: #d32f2f;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+.logout-btn:hover {
+  background-color: #b71c1c;
+}
+
+
 .logout-btn {
   background-color: #f44336; /* Red color */
   color: white;
