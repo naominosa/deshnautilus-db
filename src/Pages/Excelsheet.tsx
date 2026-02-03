@@ -7,8 +7,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import "../Styles/styles.css";
 import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
+// import * as XLSX from "xlsx";
+// import { saveAs } from "file-saver";
 
 export interface Property {
   id?: string;
@@ -107,15 +107,15 @@ function Excelsheet() {
   };
 
   // Export to Excel
-  const exportToExcel = () => {
-    const exportData = data.map(({ id, ...rest }) => rest); // remove id field
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Properties");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, "properties.xlsx");
-  };
+  // const exportToExcel = () => {
+  //   const exportData = data.map(({ id, ...rest }) => rest); 
+  //   const worksheet = XLSX.utils.json_to_sheet(exportData);
+  //   const workbook = XLSX.utils.book_new();
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Properties");
+  //   const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  //   const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+  //   saveAs(blob, "properties.xlsx");
+  // };
 
   return (
     <div className="container">
@@ -123,14 +123,14 @@ function Excelsheet() {
       <div className="header">
         <h1 className="title">Desh Nautilus — Property Management</h1>
         <div>
-          <Button
+          {/* <Button
             variant="contained"
             color="primary"
             onClick={exportToExcel}
             style={{ marginRight: "10px" }}
           >
             Export Excel
-          </Button>
+          </Button> */}
           <Button variant="contained" color="error" onClick={() => signOut(auth)}>
             Logout
           </Button>
