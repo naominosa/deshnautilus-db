@@ -5,6 +5,8 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase
 import { IconButton, Menu, MenuItem, Chip } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import "../Styles/styles.css";
+import { signOut } from "firebase/auth";
+import { auth } from "./firebase";
 
 export interface Property {
   id?: string;
@@ -32,6 +34,7 @@ function Excelsheet() {
     const val = Number(num);
     return isNaN(val) ? num : new Intl.NumberFormat("en-US").format(val);
   };
+
 
   const fetchData = async () => {
     const snapshot = await getDocs(propertiesCollection);
@@ -120,6 +123,13 @@ function Excelsheet() {
       {/* ================= FORM ================= */}
       <div className="form-card">
         <h3 className="form-title">Add New Listing</h3>
+
+        <button
+  onClick={() => signOut(auth)}
+  style={{ float: "right", marginBottom: "20px" }}
+>
+  Logout
+</button>
 
         <form
           className="form-grid"
