@@ -119,17 +119,13 @@ function Excelsheet() {
   return (
     <div className="container">
       <h1 className="title">Desh Nautilus — Property Management</h1>
-
+<button className="logout-btn" onClick={() => signOut(auth)}>
+        Logout
+      </button>
       {/* ================= FORM ================= */}
       <div className="form-card">
         <h3 className="form-title">Add New Listing</h3>
 
-        <button
-  onClick={() => signOut(auth)}
-  style={{ float: "right", marginBottom: "20px" }}
->
-  Logout
-</button>
 
         <form
           className="form-grid"
