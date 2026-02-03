@@ -5,7 +5,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase
 import { IconButton, Menu, MenuItem } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import "../Styles/styles.css";
-
+import "../Styles/Excelsheet.css"
 export interface Property {
   id?: string;
   DATE: string;
