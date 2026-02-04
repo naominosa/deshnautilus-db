@@ -1,8 +1,24 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
 import { db } from "./firebase";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
-import { IconButton, Menu, MenuItem, Chip, Button } from "@mui/material";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+import {
+  IconButton,
+  Menu,
+  MenuItem,
+  Chip,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+} from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import "../Styles/styles.css";
 import { signOut } from "firebase/auth";
@@ -14,8 +30,8 @@ export interface Property {
   id?: string;
   DATE: string;
   PROPERTY: string;
-  VALUE: string; // string now
-  COMMISSION: string; // string now
+  VALUE: string;
+  COMMISSION: string;
   CONTACT: string;
   CONTACT_STATUS: string;
   ADDRESS: string;
@@ -29,6 +45,8 @@ function Excelsheet() {
   const [data, setData] = useState<Property[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentRow, setCurrentRow] = useState<any>(null);
+
+  const [openModal, setOpenModal] = useState(false);
 
   const propertiesCollection = collection(db, "properties");
 
@@ -53,7 +71,6 @@ function Excelsheet() {
     fetchData();
   }, []);
 
-  // Status chip
   const getStatusChip = (status: string) => {
     switch (status) {
       case "Sold":
@@ -71,6 +88,8 @@ function Excelsheet() {
     () => [
       { accessorKey: "DATE", header: "Date" },
       { accessorKey: "PROPERTY", header: "Property Name" },
+      { accessorKey: "TITLE", header: "Title" },
+      { accessorKey: "PURPOSE", header: "Purpose" },
       {
         accessorKey: "STATUS",
         header: "Status",
@@ -94,124 +113,118 @@ function Excelsheet() {
         accessorKey: "CONTACT_STATUS",
         header: "Contact Type",
         editVariant: "select",
-        editSelectOptions: ["Owner", "Caretaker", "Agent", "Broker", "Developer"],
+        editSelectOptions: [
+          "Owner",
+          "Caretaker",
+          "Agent",
+          "Broker",
+          "Developer",
+        ],
       },
       { accessorKey: "ADDRESS", header: "Address" },
     ],
     []
   );
-      
+
   const handleMenuOpen = (e: React.MouseEvent<HTMLButtonElement>, row: any) => {
     setAnchorEl(e.currentTarget);
     setCurrentRow(row);
   };
 
-  // Export to Excel
   const exportToExcel = () => {
-    const exportData = data.map(({ id, ...rest }) => rest); // remove id field
+    const exportData = data.map(({ id, ...rest }) => rest);
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Properties");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer]);
     saveAs(blob, "properties.xlsx");
   };
 
   return (
     <div className="container">
-      {/* Header with Logout and Export */}
+      {/* HEADER */}
       <div className="header">
         <h1 className="title">Desh Nautilus — Property Management</h1>
+
         <div>
           <Button
             variant="contained"
-            color="primary"
+            onClick={() => setOpenModal(true)}
+            style={{ marginRight: "10px" }}
+          >
+            Add Property
+          </Button>
+
+          <Button
+            variant="contained"
             onClick={exportToExcel}
             style={{ marginRight: "10px" }}
           >
             Export Excel
           </Button>
+
           <Button variant="contained" color="error" onClick={() => signOut(auth)}>
             Logout
           </Button>
         </div>
       </div>
 
-      {/* Form */}
-      <div className="form-card">
-        <h3 className="form-title">Add New Listing</h3>
+      {/* ADD PROPERTY MODAL */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="md">
+        <DialogTitle>Add New Listing</DialogTitle>
 
-        <form
-          className="form-grid"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const fd = new FormData(e.currentTarget as HTMLFormElement);
+        <DialogContent>
+          <form
+            className="form-grid"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget as HTMLFormElement);
 
-            const newEntry: Property = {
-              DATE: fd.get("DATE") as string,
-              PROPERTY: fd.get("PROPERTY") as string,
-              VALUE: fd.get("VALUE") as string,
-              COMMISSION: fd.get("COMMISSION") as string,
-              CONTACT: fd.get("CONTACT") as string,
-              CONTACT_STATUS: fd.get("CONTACT_STATUS") as string,
-              ADDRESS: fd.get("ADDRESS") as string,
-              REFERENCE_NO: Number(fd.get("REFERENCE_NO")),
-              STATUS: fd.get("STATUS") as string,
-              TITLE: "",
-              PURPOSE: "",
-            };
+              const newEntry: Property = {
+                DATE: fd.get("DATE") as string,
+                PROPERTY: fd.get("PROPERTY") as string,
+                VALUE: fd.get("VALUE") as string,
+                COMMISSION: fd.get("COMMISSION") as string,
+                CONTACT: fd.get("CONTACT") as string,
+                CONTACT_STATUS: fd.get("CONTACT_STATUS") as string,
+                ADDRESS: fd.get("ADDRESS") as string,
+                REFERENCE_NO: Number(fd.get("REFERENCE_NO")),
+                STATUS: fd.get("STATUS") as string,
+                TITLE: fd.get("TITLE") as string,
+                PURPOSE: fd.get("PURPOSE") as string,
+              };
 
-            try {
-              const docRef = await addDoc(propertiesCollection, newEntry);
-              setData((prev) => [{ ...newEntry, id: docRef.id }, ...prev]);
-              (e.target as HTMLFormElement).reset();
-            } catch (error) {
-              alert("Failed to add property");
-            }
-          }}
-        >
-          <div className="input-group">
-            <label>Date</label>
+              try {
+                const docRef = await addDoc(propertiesCollection, newEntry);
+                setData((prev) => [{ ...newEntry, id: docRef.id }, ...prev]);
+                setOpenModal(false);
+                (e.target as HTMLFormElement).reset();
+              } catch {
+                alert("Failed to add property");
+              }
+            }}
+          >
             <input name="DATE" type="date" required />
-          </div>
+            <input name="PROPERTY" placeholder="Property" required />
+            <input name="TITLE" placeholder="Title" />
+            <input name="PURPOSE" placeholder="Purpose" />
 
-          <div className="input-group">
-            <label>Property Name</label>
-            <input name="PROPERTY" type="text" required />
-          </div>
-
-          <div className="input-group">
-            <label>Status</label>
-            <select name="STATUS" required>
-              <option value="Available">Available</option>
-              <option value="Sold">Sold</option>
-              <option value="Leased">Leased</option>
-              <option value="Withdrawn">Withdrawn</option>
+            <select name="STATUS">
+              <option>Available</option>
+              <option>Sold</option>
+              <option>Leased</option>
+              <option>Withdrawn</option>
             </select>
-          </div>
 
-          <div className="input-group">
-            <label>Value</label>
-            <input name="VALUE" type="text" required />
-          </div>
+            <input name="VALUE" placeholder="Value" required />
+            <input name="COMMISSION" placeholder="Commission" required />
+            <input name="REFERENCE_NO" placeholder="Reference No" required />
+            <input name="CONTACT" placeholder="Contact" />
 
-          <div className="input-group">
-            <label>Commission</label>
-            <input name="COMMISSION" type="text" required />
-          </div>
-
-          <div className="input-group">
-            <label>Reference Number</label>
-            <input name="REFERENCE_NO" type="number" required />
-          </div>
-
-          <div className="input-group">
-            <label>Contact</label>
-            <input name="CONTACT" type="text" />
-          </div>
-
-          <div className="input-group">
-            <label>Contact Type</label>
             <select name="CONTACT_STATUS">
               <option>Owner</option>
               <option>Caretaker</option>
@@ -219,43 +232,35 @@ function Excelsheet() {
               <option>Broker</option>
               <option>Developer</option>
             </select>
-          </div>
 
-          <div className="input-group">
-            <label>Address</label>
-            <input name="ADDRESS" type="text" />
-          </div>
+            <input name="ADDRESS" placeholder="Address" />
 
-          <button type="submit" className="submit-btn">
-            Save Property
-          </button>
-        </form>
-      </div>
+            <Button type="submit" variant="contained">
+              Save Property
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      {/* Table */}
+      {/* TABLE */}
       <MaterialReactTable
         columns={columns}
         data={data}
         enableEditing
         editDisplayMode="modal"
         onEditingRowSave={async ({ exitEditingMode, row, values }) => {
-          try {
-            await updateDoc(doc(db, "properties", row.original.id!), {
-              ...values,
-              VALUE: values.VALUE,
-              COMMISSION: values.COMMISSION,
-              REFERENCE_NO: Number(values.REFERENCE_NO),
-            });
+          await updateDoc(doc(db, "properties", row.original.id!), {
+            ...values,
+            REFERENCE_NO: Number(values.REFERENCE_NO),
+          });
 
-            setData((prev) =>
-              prev.map((item) => (item.id === row.original.id ? { ...item, ...values } : item))
-            );
+          setData((prev) =>
+            prev.map((item) =>
+              item.id === row.original.id ? { ...item, ...values } : item
+            )
+          );
 
-            exitEditingMode();
-          } catch (error) {
-            console.error("Failed to save edits:", error);
-            alert("Failed to save changes");
-          }
+          exitEditingMode();
         }}
         renderRowActions={({ row, table }) => (
           <>
@@ -263,7 +268,11 @@ function Excelsheet() {
               <MoreVertIcon />
             </IconButton>
 
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={() => setAnchorEl(null)}
+            >
               <MenuItem
                 onClick={() => {
                   table.setEditingRow(currentRow);
@@ -276,7 +285,9 @@ function Excelsheet() {
               <MenuItem
                 onClick={async () => {
                   if (window.confirm("Delete?")) {
-                    await deleteDoc(doc(db, "properties", currentRow.original.id));
+                    await deleteDoc(
+                      doc(db, "properties", currentRow.original.id)
+                    );
                     fetchData();
                   }
                   setAnchorEl(null);
