@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import {
   collection,
   getDocs,
@@ -22,7 +22,6 @@ import {
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import "../Styles/styles.css";
 import { signOut } from "firebase/auth";
-import { auth } from "./firebase";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
@@ -44,8 +43,7 @@ export interface Property {
 function Excelsheet() {
   const [data, setData] = useState<Property[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [currentRow, setCurrentRow] = useState<any>(null);
-
+  const [menuRow, setMenuRow] = useState<any>(null);
   const [openModal, setOpenModal] = useState(false);
 
   const propertiesCollection = collection(db, "properties");
@@ -57,6 +55,7 @@ function Excelsheet() {
 
   const fetchData = async () => {
     const snapshot = await getDocs(propertiesCollection);
+
     const fetchedData = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
@@ -64,6 +63,7 @@ function Excelsheet() {
     })) as Property[];
 
     fetchedData.sort((a, b) => b.DATE.localeCompare(a.DATE));
+
     setData(fetchedData);
   };
 
@@ -126,20 +126,26 @@ function Excelsheet() {
     []
   );
 
-  const handleMenuOpen = (e: React.MouseEvent<HTMLButtonElement>, row: any) => {
+  const handleMenuOpen = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    row: any
+  ) => {
     setAnchorEl(e.currentTarget);
-    setCurrentRow(row);
+    setMenuRow(row);
   };
 
   const exportToExcel = () => {
     const exportData = data.map(({ id, ...rest }) => rest);
+
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Properties");
+
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
     });
+
     const blob = new Blob([excelBuffer]);
     saveAs(blob, "properties.xlsx");
   };
@@ -182,13 +188,14 @@ function Excelsheet() {
             className="form-grid"
             onSubmit={async (e) => {
               e.preventDefault();
-              const fd = new FormData(e.currentTarget as HTMLFormElement);
+
+              const fd = new FormData(e.currentTarget);
 
               const newEntry: Property = {
                 DATE: fd.get("DATE") as string,
                 PROPERTY: fd.get("PROPERTY") as string,
-                VALUE: fd.get("VALUE") as string,
-                COMMISSION: fd.get("COMMISSION") as string,
+                VALUE: String(fd.get("VALUE")),
+                COMMISSION: String(fd.get("COMMISSION")),
                 CONTACT: fd.get("CONTACT") as string,
                 CONTACT_STATUS: fd.get("CONTACT_STATUS") as string,
                 ADDRESS: fd.get("ADDRESS") as string,
@@ -200,10 +207,13 @@ function Excelsheet() {
 
               try {
                 const docRef = await addDoc(propertiesCollection, newEntry);
+
                 setData((prev) => [{ ...newEntry, id: docRef.id }, ...prev]);
+
                 setOpenModal(false);
                 (e.target as HTMLFormElement).reset();
-              } catch {
+              } catch (error) {
+                console.error(error);
                 alert("Failed to add property");
               }
             }}
@@ -246,22 +256,44 @@ function Excelsheet() {
       <MaterialReactTable
         columns={columns}
         data={data}
+        getRowId={(row) => row.id!}
         enableEditing
         editDisplayMode="modal"
-        onEditingRowSave={async ({ exitEditingMode, row, values }) => {
-          await updateDoc(doc(db, "properties", row.original.id!), {
-            ...values,
-            REFERENCE_NO: Number(values.REFERENCE_NO),
-          });
+       onEditingRowSave={async ({ exitEditingMode, row, values }) => {
+  try {
+    const propertyId = row.original?.id;
 
-          setData((prev) =>
-            prev.map((item) =>
-              item.id === row.original.id ? { ...item, ...values } : item
-            )
-          );
+    if (!propertyId) {
+      alert("Missing Property ID");
+      return;
+    }
 
-          exitEditingMode();
-        }}
+    // ✅ Remove undefined fields
+    const cleanedValues = Object.fromEntries(
+      Object.entries(values).filter(([_, v]) => v !== undefined)
+    );
+
+    // ✅ Force number conversion safely
+    if (cleanedValues.REFERENCE_NO) {
+      cleanedValues.REFERENCE_NO = Number(cleanedValues.REFERENCE_NO);
+    }
+
+    await updateDoc(doc(db, "properties", propertyId), cleanedValues);
+
+    // Update UI
+    setData((prev) =>
+      prev.map((item) =>
+        item.id === propertyId ? { ...item, ...cleanedValues } : item
+      )
+    );
+
+    exitEditingMode();
+  } catch (error) {
+    console.error("Firebase Update Error:", error);
+    alert("Failed to update property");
+  }
+}}
+
         renderRowActions={({ row, table }) => (
           <>
             <IconButton onClick={(e) => handleMenuOpen(e, row)}>
@@ -275,7 +307,7 @@ function Excelsheet() {
             >
               <MenuItem
                 onClick={() => {
-                  table.setEditingRow(currentRow);
+                  table.setEditingRow(menuRow);
                   setAnchorEl(null);
                 }}
               >
@@ -284,10 +316,8 @@ function Excelsheet() {
 
               <MenuItem
                 onClick={async () => {
-                  if (window.confirm("Delete?")) {
-                    await deleteDoc(
-                      doc(db, "properties", currentRow.original.id)
-                    );
+                  if (window.confirm("Delete property permanently?")) {
+                    await deleteDoc(doc(db, "properties", menuRow.original.id));
                     fetchData();
                   }
                   setAnchorEl(null);
